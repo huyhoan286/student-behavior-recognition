@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Demo — Nhận diện hành vi sinh viên</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--sur:#16191f;--sur2:#1e2330;
+  --bdr:#252836;--txt:#dde3ee;--dim:#6b7a99;--acc:#4f7ef7;
+  --cn:#00c864;--cd:#3b82f6;--cs:#a855f7;--cp:#f59e0b;--ce:#ef6820;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font:13px/1.4 system-ui,sans-serif;display:flex;flex-direction:column}
+
+header{
+  height:33px;flex-shrink:0;background:var(--sur);border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+}
+header h1{font-size:13px;font-weight:600}
+#status{font-size:11px;color:var(--dim)}
+
+.wrap{display:flex;flex:1;min-height:0}
+
+/* ── sidebar ── */
+.left{
+  width:220px;flex-shrink:0;background:var(--sur);border-right:1px solid var(--bdr);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sec{padding:8px 10px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+select,input[type=number]{
+  width:100%;background:var(--bg);border:1px solid var(--bdr);color:var(--txt);
+  padding:5px 7px;font-size:12px;border-radius:3px;outline:none;
+}
+select:focus,input:focus{border-color:var(--acc)}
+
+/* video list */
+.video-list{flex:1;overflow-y:auto;min-height:0;padding:6px 8px}
+.room-header{
+  font-size:10px;font-weight:700;color:var(--acc);text-transform:uppercase;
+  letter-spacing:.07em;padding:6px 4px 3px;
+}
+.video-item{
+  display:flex;align-items:center;gap:7px;padding:4px 6px;
+  border:1px solid transparent;border-radius:3px;cursor:pointer;
+  transition:background .12s,border-color .12s;
+}
+.video-item:hover{background:var(--sur2);border-color:var(--bdr)}
+.video-item.active{background:var(--sur2);border-color:var(--acc)}
+.vi-thumb{
+  width:60px;height:34px;object-fit:cover;border-radius:2px;
+  border:1px solid var(--bdr);background:#000;flex-shrink:0;
+}
+.vi-info{min-width:0;line-height:1.35}
+.vi-time{font-size:12px;font-weight:600;white-space:nowrap}
+.vi-date{font-size:10px;color:var(--dim)}
+
+/* seek row */
+.seek-row{display:flex;align-items:center;gap:6px}
+.seek-row label{font-size:11px;color:var(--dim);white-space:nowrap}
+.seek-row input{width:70px}
+
+/* buttons */
+.btn-row{padding:8px 10px;border-top:1px solid var(--bdr);display:flex;gap:6px;flex-shrink:0}
+button{flex:1;border:none;padding:7px;font-size:12px;font-weight:600;border-radius:3px;cursor:pointer}
+#btn-start{background:var(--acc);color:#fff}
+#btn-start:hover:not(:disabled){filter:brightness(1.1)}
+#btn-start:disabled{opacity:.4;cursor:not-allowed}
+#btn-stop{background:var(--sur2);color:var(--dim);border:1px solid var(--bdr)}
+#btn-stop:hover{color:var(--txt)}
+
+/* ── stream ── */
+.mid{flex:1;min-width:0;background:#000;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--bdr);position:relative;overflow:hidden}
+#stream{max-width:100%;max-height:100%;display:block;object-fit:contain}
+.stream-ph{color:var(--dim);font-size:12px;text-align:center;line-height:2.4;position:absolute}
+#progress-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--acc);width:0%;transition:width .4s}
+
+/* ── right panel ── */
+.right{width:262px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.focus-block{padding:9px 10px 7px;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--sur)}
+.f-row{display:flex;align-items:baseline;gap:5px;margin-top:3px}
+.f-num{font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.f-pct{font-size:14px;color:var(--dim)}
+.f-lv{font-size:11px;font-weight:600;margin-left:4px}
+.f-bar{height:5px;background:var(--bdr);border-radius:3px;margin-top:6px;overflow:hidden}
+.f-fill{height:100%;width:0;border-radius:3px;transition:width .5s,background .4s}
+
+.persons-wrap{flex:1;overflow-y:auto;min-height:0}
+.no-data{padding:14px 10px;color:var(--dim);font-size:12px}
+.person-card{border-bottom:1px solid var(--bdr);padding:7px 10px}
+.pc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.pc-id{font-size:11px;font-weight:700;color:var(--acc)}
+.pc-lv{font-size:10px;font-weight:600}
+.pc-label{font-size:12px;display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.pc-conf{font-size:10px;color:var(--dim);margin-left:auto}
+.mini-bar{height:3px;background:var(--bdr);border-radius:2px;margin-bottom:4px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px;transition:width .4s,background .4s}
+.pc-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:3px}
+.pc-bk{display:flex;gap:4px;flex-wrap:wrap}
+.bk{font-size:10px;color:var(--dim);display:flex;align-items:center;gap:2px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:2px;flex-shrink:0}
+
+.legend-row{
+  display:flex;flex-wrap:wrap;gap:4px 10px;
+  padding:6px 10px;border-top:1px solid var(--bdr);flex-shrink:0;background:var(--sur);
+}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim)}
+
+#loading{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;
+  align-items:center;justify-content:center;z-index:300;font-size:13px;
+}
+#loading.on{display:flex}
+.spin{width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;margin-right:10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Demo — Nhận diện hành vi sinh viên</h1>
+  <span id="status">Sẵn sàng</span>
+</header>
+
+<div class="wrap">
+  <aside class="left">
+    <div class="sec">
+      <div class="lbl">Mô hình</div>
+      <select id="sel-model">
+        <option value="1">M1 — EfficientNet-B0</option>
+<option value="3">M3 — TimeSformer</option>
+        <option value="4" selected>M4 — Video Swin-T</option>
+      </select>
+    </div>
+    <div class="sec">
+      <div class="lbl" style="margin-bottom:4px">Bắt đầu từ (giây)</div>
+      <div class="seek-row">
+        <input type="number" id="inp-start" value="0" min="0" step="60" placeholder="0">
+        <label>giây vào video</label>
+      </div>
+    </div>
+    <div style="padding:6px 10px 3px;flex-shrink:0;border-bottom:1px solid var(--bdr)">
+      <div class="lbl">Chọn video lớp học</div>
+    </div>
+    <div class="video-list" id="video-list">
+      <div style="color:var(--dim);font-size:12px;padding:8px 4px">Đang tải...</div>
+    </div>
+    <div class="btn-row">
+      <button id="btn-start" disabled>Phân tích</button>
+      <button id="btn-stop">Dừng</button>
+    </div>
+  </aside>
+
+  <div class="mid">
+    <img id="stream" src="" alt="" style="display:none">
+    <video id="video-preview" style="display:none;max-width:100%;max-height:100%;outline:none" controls></video>
+    <div class="stream-ph" id="stream-ph">Chọn video rồi nhấn Phân tích</div>
+    <div id="progress-bar"></div>
+  </div>
+
+  <aside class="right">
+    <div class="focus-block">
+      <div class="lbl">Mức độ tập trung tổng thể</div>
+      <div class="f-row">
+        <span class="f-num" id="f-num">--</span>
+        <span class="f-pct">%</span>
+        <span class="f-lv" id="f-lv">Chưa phân tích</span>
+      </div>
+      <div class="f-bar"><div class="f-fill" id="f-fill"></div></div>
+    </div>
+    <div class="persons-wrap" id="persons-wrap">
+      <div class="no-data">Chưa phát hiện người</div>
+    </div>
+    <div class="legend-row">
+      <div class="leg"><span class="dot" style="background:#00c864"></span>Bình thường</div>
+      <div class="leg"><span class="dot" style="background:#3b82f6"></span>Mất tập trung</div>
+      <div class="leg"><span class="dot" style="background:#a855f7"></span>Ngủ gật</div>
+      <div class="leg"><span class="dot" style="background:#f59e0b"></span>Dùng điện thoại</div>
+      <div class="leg"><span class="dot" style="background:#ef6820"></span>Ăn uống</div>
+    </div>
+  </aside>
+</div>
+
+<div id="loading"><div class="spin"></div>Đang tải mô hình và khởi động stream...</div>
+
+<script>
+const CC = {normal:'#00c864',distracted:'#3b82f6',sleep:'#a855f7',use_smartphone:'#f59e0b',drink_eat:'#ef6820'};
+const FOCUS_LV = s => s >= 70 ? ['Tốt','#00c864'] : s >= 40 ? ['Trung bình','#f59e0b'] : ['Cần cải thiện','#ef4444'];
+
+let selected = null;
+let pollTimer = null;
+
+async function loadVideos() {
+  const data = await fetch('/api/videos').then(r => r.json());
+  const list = document.getElementById('video-list');
+
+  const rooms = {};
+  data.forEach(v => {
+    if (!rooms[v.room]) rooms[v.room] = [];
+    rooms[v.room].push(v);
+  });
+
+  list.innerHTML = Object.entries(rooms).map(([room, vids]) => `
+    <div class="room-header">${vids[0].room_label}</div>
+    ${vids.map(v => `
+      <div class="video-item" data-file="${v.filename}" onclick="selectVideo(this,'${v.filename}','${v.label}')">
+        <img class="vi-thumb" src="${v.thumb}" alt="" onerror="this.style.opacity='.2'">
+        <div class="vi-info">
+          <div class="vi-time">${v.time}</div>
+          <div class="vi-date">${v.date}</div>
+        </div>
+      </div>`).join('')}
+  `).join('');
+}
+
+function selectVideo(el, filename, label) {
+  document.querySelectorAll('.video-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  selected = filename;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('status').textContent = 'Đã chọn: ' + label;
+  const vp = document.getElementById('video-preview');
+  vp.src = '/video/' + encodeURIComponent(filename);
+  vp.style.display = 'block';
+  document.getElementById('stream-ph').style.display = 'none';
+  document.getElementById('stream').style.display = 'none';
+}
+
+function startPolling() {
+  pollTimer = setInterval(async () => {
+    try {
+      const d = await fetch('/api/stream-stats').then(r => r.json());
+      renderStats(d);
+    } catch(e) {}
+  }, 600);
+}
+function stopPolling() { clearInterval(pollTimer); }
+
+function renderStats(d) {
+  if (!d.active && !Object.keys(d.persons || {}).length) return;
+
+  const score = d.overall_focus || 0;
+  const [lv, clr] = FOCUS_LV(score);
+  document.getElementById('f-num').textContent = score.toFixed(1);
+  const flv = document.getElementById('f-lv');
+  flv.textContent = lv; flv.style.color = clr;
+  const fill = document.getElementById('f-fill');
+  fill.style.width = score + '%'; fill.style.background = clr;
+
+  if (d.total > 0)
+    document.getElementById('progress-bar').style.width = (d.frame / d.total * 100) + '%';
+
+  const persons = d.persons || {};
+  const ids = Object.keys(persons);
+  const wrap = document.getElementById('persons-wrap');
+
+  if (!ids.length) {
+    wrap.innerHTML = '<div class="no-data">Chưa phát hiện người</div>';
+    return;
+  }
+
+  wrap.innerHTML = ids.map(tid => {
+    const p = persons[tid];
+    const labelClr = CC[p.label] || '#6b7a99';
+    const [plv, pclr] = FOCUS_LV(p.focus);
+    return `
+    <div class="person-card">
+      <div class="pc-head">
+        <span class="pc-id">Người ${tid}</span>
+        <span class="pc-lv" style="color:${labelClr}">${p.label_vn}</span>
+      </div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${p.focus}%;background:${pclr}"></div></div>
+      <div class="pc-meta">
+        <span>Tập trung: <b style="color:${pclr}">${p.focus.toFixed(1)}%</b></span>
+        <span style="color:var(--dim)">${p.total} lần đo</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  if (!selected) return;
+  const modelId  = document.getElementById('sel-model').value;
+  const startSec = parseInt(document.getElementById('inp-start').value) || 0;
+  const url = `/stream?file=${encodeURIComponent(selected)}&model_id=${modelId}&start=${startSec}&t=${Date.now()}`;
+
+  document.getElementById('video-preview').style.display = 'none';
+  document.getElementById('loading').classList.add('on');
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('status').textContent = 'Đang tải mô hình...';
+  stopPolling();
+
+  const img = document.getElementById('stream');
+  img.onload = () => {
+    document.getElementById('loading').classList.remove('on');
+    document.getElementById('stream-ph').style.display = 'none';
+    img.style.display = 'block';
+    document.getElementById('btn-start').disabled = false;
+    const selText = document.getElementById('sel-model').selectedOptions[0].text;
+    document.getElementById('status').textContent = 'Đang phân tích — ' + selText;
+    startPolling();
+  };
+  img.onerror = () => {
+    document.getElementById('loading').classList.remove('on');
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('status').textContent = 'Lỗi stream';
+  };
+  img.src = url;
+});
+
+document.getElementById('btn-stop').addEventListener('click', () => {
+  fetch('/api/stop', {method:'POST'});
+  const img = document.getElementById('stream');
+  img.src = ''; img.style.display = 'none';
+  if (selected) {
+    const vp = document.getElementById('video-preview');
+    vp.src = '/video/' + encodeURIComponent(selected);
+    vp.style.display = 'block';
+  } else {
+    document.getElementById('stream-ph').style.display = 'block';
+  }
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('status').textContent = 'Đã dừng';
+  stopPolling();
+});
+
+loadVideos();
+</script>
+</body>
+</html>
