@@ -1,0 +1,22 @@
+                precision    recall  f1-score   support
+
+    distracted     0.9000    0.8438    0.8710        32
+     drink_eat     0.9677    0.9677    0.9677        31
+        normal     0.8529    0.9062    0.8788        32
+         sleep     1.0000    1.0000    1.0000        32
+use_smartphone     0.9062    0.9062    0.9062        32
+
+      accuracy                         0.9245       159
+     macro avg     0.9254    0.9248    0.9247       159
+  weighted avg     0.9251    0.9245    0.9245       159
+
+--- Aggregate Metrics ---
+Accuracy          : 0.9245
+Balanced Accuracy : 0.9248
+Macro F1          : 0.9247
+Weighted F1       : 0.9245
+Macro Precision   : 0.9254
+Macro Recall      : 0.9248
+Cohen's Kappa     : 0.9057
+MCC               : 0.9058
+Inference ms/sample: 99.8796

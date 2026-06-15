@@ -1,27 +1,21 @@
-# Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-.eggs/
-dist/
-build/
-
-# Virtual environment
 venv/
 .venv/
-
-# Large / generated data (regenerate via train.py / frame_extractor)
-cache/
 dataset/
 videos/
-
-# IDE / OS
-.idea/
-.vscode/
-*.swp
-.DS_Store
-Thumbs.db
-
-# Secrets
 .env
 .env.*
+
+# Không push frame cache
+cache/frames/
+
+# Không push plots
+cache/plots/
+
+# Không push checkpoint lớn
+cache/model3/*.pth
+cache/model4/*.pth
+
+# Không push checkpoint cuối
+cache/**/last.pth
